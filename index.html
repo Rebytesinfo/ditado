@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ditado Escolar</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      padding: 24px; font-family: Arial, sans-serif;
+      background: #eaf2f8; color: #203040;
+    }
+    .container {
+      width: 100%; max-width: 620px; padding: 28px; text-align: center;
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.12);
+    }
+    h1 { margin-top: 0; color: #1565c0; }
+    .intro, #pontuacao, #progresso { color: #526170; }
+    label { display: block; margin: 18px 0 8px; text-align: left; font-weight: bold; }
+    input {
+      width: 100%; padding: 13px; border: 1px solid #b8c5d1;
+      border-radius: 8px; font-size: 18px;
+    }
+    input:focus { outline: 2px solid #90caf9; border-color: #1565c0; }
+    .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+    button {
+      padding: 12px 16px; border: 0; border-radius: 8px;
+      background: #1565c0; color: #fff; font-size: 15px; cursor: pointer;
+    }
+    button:hover { background: #0d47a1; }
+    button.secondary { background: #546e7a; }
+    button.secondary:hover { background: #37474f; }
+    #resultado { min-height: 26px; margin-top: 22px; font-weight: bold; }
+    button:disabled, input:disabled { opacity: .6; cursor: not-allowed; }
+    @media (max-width: 480px) {
+      .container { padding: 20px; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>📝 Ditado Turma 0006</h1>
+    <p class="intro">Ouça a palavra e escreva corretamente.</p>
+
+    <div class="actions">
+      <button id="btnOuvir">🔊 Ouvir palavra</button>
+    </div>
+
+    <label for="resposta">Sua resposta</label>
+    <input id="resposta" type="text" placeholder="Digite a palavra aqui" autocomplete="off">
+
+    <div class="actions">
+      <button id="btnVerificar">Verificar resposta</button>
+      <button id="btnProxima" class="secondary">Próxima palavra</button>
+      <button id="btnReiniciar" class="secondary">Reiniciar ditado</button>
+    </div>
+
+    <p id="resultado" role="status" aria-live="polite"></p>
+    <p id="pontuacao">Acertos: 0 de 8</p>
+    <p id="progresso">Palavra 1 de 8</p>
+  </main>
+
+  <script>
+    // Edite esta lista para personalizar o ditado.
+    const palavras = [
+      "prateleiras",
+      "promoção",
+      "computador",
+      "reposição",
+      "reforço",
+      "abastecer",
+      "tecnologia",
+      "internet",
+      "registrar"
+      "desifetante",
+      "semidesnatado"
+      "inventário",
+      "aprendizagem",
+      "reutilizável",
+      "biodegradável",
+      "estoque",
+      "carrinho",
+      
+ 
+      "conhecimento"
+    ];
+
+    let indice = 0;
+    let acertos = 0;
+    let respondida = false;
+
+    const resposta = document.getElementById("resposta");
+    const resultado = document.getElementById("resultado");
+    const pontuacao = document.getElementById("pontuacao");
+    const progresso = document.getElementById("progresso");
+    const btnOuvir = document.getElementById("btnOuvir");
+    const btnVerificar = document.getElementById("btnVerificar");
+    const btnProxima = document.getElementById("btnProxima");
+    const btnReiniciar = document.getElementById("btnReiniciar");
+
+    function ouvir() {
+      if (!("speechSynthesis" in window)) {
+        resultado.textContent = "Seu navegador não oferece leitura de voz.";
+        resultado.style.color = "#b71c1c";
+        return;
+      }
+      const fala = new SpeechSynthesisUtterance(palavras[indice]);
+      fala.lang = "pt-BR";
+      fala.rate = 0.8;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(fala);
+    }
+
+    function verificar() {
+      if (respondida) return;
+      const digitada = resposta.value.trim().toLocaleLowerCase("pt-BR");
+      if (!digitada) {
+        resultado.textContent = "Digite uma palavra antes de verificar.";
+        resultado.style.color = "#b71c1c";
+        resposta.focus();
+        return;
+      }
+      respondida = true;
+      if (digitada === palavras[indice].toLocaleLowerCase("pt-BR")) {
+        resultado.textContent = "✅ Correto! Muito bem!";
+        resultado.style.color = "#2e7d32";
+        acertos++;
+      } else {
+        resultado.textContent = "❌ A palavra correta era: " + palavras[indice];
+        resultado.style.color = "#b71c1c";
+      }
+      atualizarPainel();
+    }
+
+    function proxima() {
+      if (indice >= palavras.length - 1) {
+        resultado.textContent = "Ditado finalizado! Você acertou " + acertos +
+          " de " + palavras.length + " palavras.";
+        resultado.style.color = "#1565c0";
+        resposta.disabled = true;
+        btnVerificar.disabled = true;
+        btnProxima.disabled = true;
+        btnOuvir.disabled = true;
+        atualizarPainel();
+        return;
+      }
+      indice++;
+      respondida = false;
+      resposta.value = "";
+      resultado.textContent = "";
+      resposta.disabled = false;
+      btnVerificar.disabled = false;
+      atualizarPainel();
+      resposta.focus();
+      ouvir();
+    }
+
+    function reiniciar() {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      indice = 0;
+      acertos = 0;
+      respondida = false;
+      resposta.value = "";
+      resposta.disabled = false;
+      btnVerificar.disabled = false;
+      btnProxima.disabled = false;
+      btnOuvir.disabled = false;
+      resultado.textContent = "";
+      atualizarPainel();
+      resposta.focus();
+    }
+
+    function atualizarPainel() {
+      pontuacao.textContent = "Acertos: " + acertos + " de " + palavras.length;
+      progresso.textContent = "Palavra " + (indice + 1) + " de " + palavras.length;
+    }
+
+    btnOuvir.addEventListener("click", ouvir);
+    btnVerificar.addEventListener("click", verificar);
+    btnProxima.addEventListener("click", proxima);
+    btnReiniciar.addEventListener("click", reiniciar);
+    resposta.addEventListener("keydown", function(evento) {
+      if (evento.key === "Enter") verificar();
+    });
+
+    atualizarPainel();
+  </script>
+</body>
+</html>
